@@ -1,0 +1,5 @@
+.nextflow.log*
+.ipynb_checkpoints*
+.nextflow*
+work/*
+
