@@ -11,7 +11,6 @@ process cutadapt {
 
   input:
     path f
-    val outdir
 
   publishDir "${params.project_folder}/${cutadapt_output}", mode: 'copy'
 
@@ -21,28 +20,26 @@ process cutadapt {
 
   script:
   """
-  mkdir -p ${params.project_folder}/${outdir}
-
   cutadapt \
       -j ${task.cpus} \
       --length ${params.sgRNA_size} \
       -g ${params.upstreamseq} \
-      -o ${params.project_folder}/${outdir}/${f.simpleName}.trimmed.fastq.gz \
-      ${f} > ${params.project_folder}/${outdir}/${f.simpleName}.cutadapt.log
+      -o ${f.simpleName}.trimmed.fastq.gz \
+      ${f} > ${f.simpleName}.cutadapt.log
   """
 }
 
 
 workflow {
 
-  def outdir = params.cutadapt_output ?: "cutadapt_output"
+  def cutadapt_output = params.cutadapt_output ?: "cutadapt_output"
 
   def data = Channel.fromPath("${params.cutadapt_raw_data}/*fastq.gz")
 
   data = data.filter { f ->
       def trimmed = f.getName().replace(".fastq.gz", ".trimmed.fastq.gz")
-      ! file("${params.project_folder}/${outdir}/${trimmed}").exists()
+      ! file("${params.project_folder}/${cutadapt_output}/${trimmed}").exists()
   }
 
-  cutadapt(data, outdir)
+  cutadapt(data)
 }
