@@ -32,14 +32,12 @@ process cutadapt {
 
 workflow {
 
-  def cutadapt_output = params.cutadapt_output ?: "cutadapt_output"
-
   def data = Channel.fromPath("${params.cutadapt_raw_data}/*fastq.gz")
 
   data = data.filter { f ->
       def trimmed = f.getName().replace(".fastq.gz", ".trimmed.fastq.gz")
-      ! file("${params.project_folder}/${cutadapt_output}/${trimmed}").exists()
+      def outFile = new File("${params.project_folder}/${cutadapt_output}/${trimmed}")
+      ! outFile.exists()
   }
-
   cutadapt(data)
 }
