@@ -32,7 +32,7 @@ process cutadapt {
 
 workflow {
 
-  def data = Channel.fromPath("${params.cutadapt_raw_data}/*fastq.gz")
+  def data = Channel.fromPath("${params.fastqc_raw_data}/*fastq.gz")
 
   data = data.filter { f ->
       def trimmed = f.getName().replace(".fastq.gz", ".trimmed.fastq.gz")
