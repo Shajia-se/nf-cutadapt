@@ -22,8 +22,6 @@ process cutadapt {
   """
   cutadapt \
       -j ${task.cpus} \
-      --length ${params.sgRNA_size} \
-      -g ${params.upstreamseq} \
       -o ${f.simpleName}.trimmed.fastq.gz \
       ${f} > ${f.simpleName}.cutadapt.log
   """
