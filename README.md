@@ -1,7 +1,6 @@
 # nf-cutadapt
 
 A simple, portable cutadapt trimming pipeline using Nextflow.  
-Primarily intended for trimming 5′ sgRNA (or other adapter) sequences from single-end FASTQ files.
 
 📁 Demo data
 
