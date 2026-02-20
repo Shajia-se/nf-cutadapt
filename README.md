@@ -1,83 +1,95 @@
 # nf-cutadapt
 
-A simple, portable cutadapt trimming pipeline using Nextflow.  
+`nf-cutadapt` is a Nextflow DSL2 module for paired-end FASTQ adapter and quality trimming using `cutadapt`.
 
-📁 Demo data
+## What Is cutadapt (Tool Function)
 
-```bash
-mkdir -p ~/nf-cutadapt/test_data
-cd ~/nf-cutadapt/test_data
+`cutadapt` removes unwanted sequence from reads and can also do quality and length filtering.
+In this module, it can be used to:
+- trim 5' adapters (`-g` for R1, `-G` for R2)
+- trim 3' adapters (`-a` for R1, `-A` for R2)
+- trim low-quality ends (`-q`)
+- filter by minimum/maximum read length (`-m` / `-M`)
 
-wget https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_1.fastq.gz
-wget https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_2.fastq.gz
+## What This Module Does
 
-````
+1. Reads paired FASTQ files from `cutadapt_raw_data` using `cutadapt_pattern`.
+2. Skips samples that already have both trimmed R1 and R2 outputs.
+3. Runs one `cutadapt` task per sample pair.
+4. Publishes trimmed FASTQ and log files to output directory.
 
-🚀 Run locally (Docker)
+## Input
 
+- Directory: `params.cutadapt_raw_data`
+- Pattern: `params.cutadapt_pattern` (default: `*_R{1,2}_001.fastq.gz`)
+- Type: paired-end FASTQ (`R1` / `R2`)
+
+Note: `params.fastqc_raw_data` is still accepted for backward compatibility.
+
+## Output
+
+Under `${project_folder}/${cutadapt_output}` (default `./cutadapt_output/`):
+- `${sample}_R1.cutadapt.trimmed.fastq.gz`
+- `${sample}_R2.cutadapt.trimmed.fastq.gz`
+- `${sample}.cutadapt.log`
+
+## Key Parameters
+
+- `cutadapt_raw_data`: input FASTQ folder
+- `cutadapt_pattern`: paired FASTQ matching pattern
+- `cutadapt_output`: output folder name
+- `adapter_5p`: optional R1 5' adapter (`-g`)
+- `adapter_3p`: optional R1 3' adapter (`-a`)
+- `adapter_5p_r2`: optional R2 5' adapter (`-G`)
+- `adapter_3p_r2`: optional R2 3' adapter (`-A`)
+- `quality_cutoff`: optional quality trim threshold
+- `minimum_length`: optional minimum read length
+- `maximum_length`: optional maximum read length
+- `cutadapt_extra_args`: optional raw extra CLI args
+
+## Run
+
+Local:
 ```bash
 nextflow run main.nf -profile local
 ```
 
-Requirements:
-
-* Nextflow
-* Docker
-* cutadapt image, e.g.
-  `docker pull mpagegebioinformatics/cutadapt:4.5`
-* `configs/local.config` 
-
-🚀 Run on HPC (Slurm + Singularity)
-
+HPC:
 ```bash
 nextflow run main.nf -profile hpc
 ```
 
-Requirements:
-
-* Slurm scheduler
-* Singularity available
-* cutadapt `.sif` at e.g.:
-  `$HOME/singularity_images/cutadapt-4.5.sif`
-* `configs/slurm.config` 
-
-📤 Output
-
-Trimmed FASTQ files and logs are written to:
-
-```text
-${project_folder}/cutadapt_output/
+Example (paired-end adapter trimming):
+```bash
+nextflow run main.nf -profile hpc \
+  --cutadapt_raw_data /your/fastq_dir \
+  --cutadapt_pattern "*_R{1,2}_001.fastq.gz" \
+  --adapter_3p AGATCGGAAGAGC \
+  --adapter_3p_r2 AGATCGGAAGAGC \
+  --quality_cutoff 20 \
+  --minimum_length 20
 ```
 
-by default (or whatever you set via `params.cutadapt_output`).
+Resume:
+```bash
+nextflow run main.nf -profile hpc -resume
+```
 
-Each input `SAMPLE.fastq.gz` produces:
+## How To Verify Trimming
 
-* `SAMPLE.trimmed.fastq.gz`
-* `SAMPLE.cutadapt.log`
+Check `${sample}.cutadapt.log` for:
+- total read pairs processed
+- reads with adapters
+- quality-trimmed bases
+- reads/pairs filtered by length
+- reads written to output
 
-📂 Project structure
+## Project Structure
 
 ```text
 main.nf
 nextflow.config
 configs/
-├── local.config      # local + Docker
-└── slurm.config      # HPC + Slurm + Singularity
-test_data/            # optional demo data
+  local.config
+  slurm.config
 ```
-
-✔️ What this pipeline does
-
-* Loads all `*.fastq.gz` 
-* Runs `cutadapt` with:
-
-  * fixed output read length: `--length ${params.sgRNA_size}`
-  * 5′ adapter / sgRNA upstream sequence: `-g ${params.upstreamseq}`
-* Writes:
-
-  * trimmed reads: `${f.simpleName}.trimmed.fastq.gz`
-  * cutadapt log: `${f.simpleName}.cutadapt.log`
-* Skips samples that already have a trimmed FASTQ in the final output directory
-* Works identically on local and HPC environments (only the profile changes)
-
